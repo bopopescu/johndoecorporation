@@ -4,9 +4,9 @@ from flask import abort, flash, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
 from . import admin
-from .forms import DepartmentForm
+from .forms import DepartmentForm, EmployeeAssignForm, RoleForm
 from .. import db
-from ..models import Department
+from ..models import Department, Employee, Role
 
 def check_admin():
     """
@@ -77,7 +77,7 @@ def edit_department(id):
                            department=department, title="Edit Department")
 
 
-@admin.route('departments/delete/<int:id>', method=['GET', 'POST'])
+@admin.route('departments/delete/<int:id>', methods=['GET', 'POST'])
 @login_required
 def delete_department(id):
     """
@@ -94,3 +94,122 @@ def delete_department(id):
     return redirect(url_for('admin.list_departments'))
 
     return render_template(title="Delete Department")
+
+@admin.route('/roles')
+@login_required
+def list_roles():
+    check_admin()
+    """
+    List all roles
+    """
+    roles = Role.query.all()
+    return render_template('admin/roles/roles.html', roles=roles, title='Roles')
+
+@admin.route('/roles/add', methods=['GET','POST'])
+@login_required
+def add_role():
+    """
+    Add a role to the database
+    """
+    check_admin()
+
+    add_role = True
+
+    form = RoleForm()
+    if form.validate_on_submit():
+        role = Role(name=form.name.data, description=form.description.data)
+        try:
+            # add role to the database
+            db.session.add(role)
+            db.session.commit()
+            flash('You have successfully added a new role.')
+        except:
+            # in case role name already exists
+            flash('Error: role name already exists.')
+
+        # redirect to the roles page
+        return redirect(url_for('admin.list_roles'))
+
+    # load role template
+    return render_template('admin/roles/role.html', add_role=add_role, form=form, title='Add Role')
+
+@admin.route('/roles/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_role(id):
+    """
+    Edit a role in the database
+    """
+    check_admin()
+
+    add_role = False
+
+    role = Role.query.get_or_404(id)
+    form = RoleForm(obj=role)
+    if form.validate_on_submit():
+        role.name = form.name.data
+        role.description = form.description.data
+        db.session.add(role)
+        db.session.commit()
+        flash('You have successfully edited the role.')
+
+        # redirect to the roles page
+        return redirect(url_for('admin.list_roles'))
+
+    form.description.data = role.description
+    form.name.data = role.name
+    return render_template('admin/roles/role.html', add_role=add_role, form=form, title="Edit Role")
+
+@admin.route('/roles/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete_role(id):
+    """
+    Delete a role from the database
+    """
+    check_admin()
+
+    role = Role.query.get_or_404(id)
+    db.session.delete(role)
+    db.session.commit()
+    flash('You have successfully deleted the role.')
+
+    # redirect to the roles page
+    return redirect(url_for('admin.list_roles'))
+
+    return render_template(title="Delete Role")
+
+@admin.route('/employees')
+@login_required
+def list_employees():
+    """
+    Queries the database for all the employees and assigns them to variable employees
+    """
+    check_admin()
+
+    employees = Employee.query.all()
+    return render_template('admin/employees/employees.html', employees=employees, title='Employees')
+
+@admin.route('/employees/assign/<int:id>', methods=['GET','POST'])
+@login_required
+def assign_employees(id):
+    """
+    Takes an employee ID. It checks whether the employee is an admin. If yes, forbidden. Else, it updates the
+    employee.department && employee.role with the selected data from the form.
+    """
+    check_admin()
+
+    employee = Employee.query.get_or_404(id)
+
+    if employee.is_admin():
+        abort(403)      # Forbidden
+
+    form = EmployeeAssignForm(obj=Employee)
+    if form.validate_on_submit():
+        employee.department = form.department.data
+        employee.role = form.role.data
+        db.session.add(employee)
+        db.session.commit()
+        flash("You have successfully assigned a department and a role")
+        # redirect to the roles page
+        return redirect(url_for('admin.list_employees'))
+
+    return render_template('admin/employees/employee.html', employee=employee, form=form, title='Assign Employee')

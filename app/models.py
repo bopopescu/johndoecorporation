@@ -36,7 +36,7 @@ class Employee(UserMixin, db.Model):
         """
         self.password_hash = generate_password_hash(password)
 
-    def verify_passowrd(self, password):
+    def verify_password(self, password):
         """
         Check if the hashed password matches the actual password
         """
@@ -58,7 +58,7 @@ class Department(db.Model):
     __tablename__ = 'departments'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.Integer, unique=True)
+    name = db.Column(db.String(60), unique=True)
     description = db.Column(db.String(200))
     employees = db.relationship('Employee', backref='department', lazy='dynamic')
 
