@@ -2,7 +2,7 @@
 
 A simple CRUD (Create, Read, Update, and Delete ) employee management webapp written in Flask.
 
-####This webapp allows:
+#### This webapp allows:
 
 * Users to register and login as employees
 
@@ -12,7 +12,7 @@ A simple CRUD (Create, Read, Update, and Delete ) employee management webapp wri
 
 * Admin to view all employees and their details
 
-####To run the code:
+#### To run the code:
 
 1. `$ sudo /usr/local/mysql/support-files/mysql.server start`
 
